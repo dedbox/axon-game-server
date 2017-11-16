@@ -96,11 +96,10 @@
          #t))
 
   (define (do-move addr x-t speed)
-    (and (update-agent addr 'MOVE x-t -
-                       (λ (A)
-                         (define p (vec- x-t (agent-position A)))
-                         (vec* p (/ speed (vlen p))))
-                       -)
+    (define (velocity A)
+      (define p (vec- x-t (agent-position A)))
+      (vec* p (/ speed (if (< (vlen p) 0.01) 0.01 (vlen p)))))
+    (and (update-agent addr 'MOVE x-t - velocity -)
          #t))
 
   (define (do-set addr key val)
