@@ -24,7 +24,7 @@
               (apply INFO msg)
               (define msg-addr (car msg))
               (define msg-data (cadr msg))
-              (give σ (list msg-addr (list server-name (cadr server-addr))))))
+              (give σ (list msg-addr (list server-name (cadr server-addr) msg-addr)))))
           (λ () (close σ))))
 
 ;;; Simulation

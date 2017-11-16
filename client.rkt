@@ -65,13 +65,15 @@
      (define server-addr (cdr server-info))
 
      (define ctrl (control-client server-addr))
+     (INFO server-addr 'connected)
+
      (define world (world-client server-addr))
      (define world-addr (udp-peer-local-address world))
      (define world-port (cadr world-addr))
-     (INFO world-addr 'connected 'to server-addr)
+     (INFO world-addr 'listening)
 
      (define my-id (ctrl `(START ,world-port)))
-     (INFO world-addr 'agent 'id my-id)
+     (INFO world-addr 'agent my-id)
 
      (define agents null)
 
@@ -89,7 +91,8 @@
        (define A-meta (and A (car (cddddr A))))
        (writeln (dict-ref (or A-meta null) key #f)))
 
-     (let ([π-read (source (λ () (read)))])
+     (let ([π-read (source (λ () (read)))]
+           [logger INFO])
        (with-handlers ([exn:break? void])
          (forever
            (match
@@ -100,7 +103,17 @@
                             (define agents-addr (car msg))
                             (set! agents (cadr msg))
                             (define my-mode (car (dict-ref agents my-id)))
-                            (apply (if (eq? my-mode 'IDLE) DEBUG INFO) msg))))
+                            (when (and (eq? logger DEBUG)
+                                       (not (eq? my-mode 'IDLE)))
+                              (set! logger INFO))
+                            (apply logger msg)
+                            (when (and (eq? logger INFO)
+                                       (eq? my-mode 'IDLE))
+                              (set! logger DEBUG))
+
+                            (cond [(and (eq? my-mode 'IDLE) (eq? logger INFO))
+                                   (set! logger DEBUG)]
+                                  [(and (not (eq? my-mode 'IDLE)))]))))
              ['idle (do-idle)]
              [`(move ,target ,speed) (do-move target speed)]
              [`(set ,key ,val) (do-set key val)]
